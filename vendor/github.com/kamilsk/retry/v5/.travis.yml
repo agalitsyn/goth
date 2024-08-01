@@ -1,0 +1,54 @@
+language: go
+os: linux
+
+cache:
+  directories:
+    - "$HOME/.cache/go-build"
+    - "$HOME/gopath/pkg/mod"
+
+env:
+  global:
+    - CODECLIMATE=https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+    - GO111MODULE=on
+
+go:
+  - master
+  - 1.x
+  - 1.11.x
+  - 1.12.x
+  - 1.13.x
+  - 1.14.x
+  - 1.15.x
+  - 1.16.x
+
+jobs:
+  allow_failures:
+    - go: master
+
+before_script:
+  - make env deps-fetch
+  - |
+    if [[ $TRAVIS_GO_VERSION == 1.16* ]]; then
+      curl -sL $CODECLIMATE > /home/travis/gopath/bin/cc-test-reporter
+      chmod +x /home/travis/gopath/bin/cc-test-reporter
+      cc-test-reporter before-build
+    fi
+
+script:
+  - |
+    if [[ $TRAVIS_GO_VERSION == 1.16* ]]; then
+      make test-with-coverage
+    else
+      make test
+    fi
+
+after_script:
+  - |
+    if [[ $TRAVIS_GO_VERSION == 1.16* ]]; then
+      sed -i "s|$(go list -m)/||g" c.out # https://github.com/codeclimate/test-reporter/issues/378
+      cc-test-reporter after-build -t gocov -p $(go list -m) --exit-code $TRAVIS_TEST_RESULT
+    fi
+
+notifications:
+  slack:
+    secure: AqvMXaBd3jFtnmIzZKYHfXkHTad5zeVilUhkPzAVURGLGXfTuR2daQnuAeMcHb9H2HXIoU32TIjDBmlB360FmSZz4HufWdy28l/pSyxyRckI60bihV+Kk4C8/JrT/LhrKr7+KdrCo7MuW1PhchhI5MdVi9ibzIbh/m7PVswS5ujBfx3SbmefQZqa6qbESBUFY9eCJxL/eLdGCjTyWCGdWACoCyIpEZswtaHXB4WYjR0k556agMCpA0d1aKeWb8j1yYEn26evGIEB7tpI725ktVbPRSbtreFO22ZGXjkzUNwkIb1W2cQI6cunY6eYtXtX6/VY3mN8VDPRypxOIvgkakqepVCQKjNrkOEva9J/uQ67HMc5oZ4xU2YuCZSq54q3wA5JXghQ7F+tQkziOB10JY5nScNqGGEz0fka8JdAniqBsUyYjKNGbMHi6ufWH6MYkZuwditTNyuJNIxAtoAdod6b0WGFqadijlIx+36H/Y5D7Mdf7hLDGE7E7qBLR/OwM9M9cQ3To647TPnexM/N8xGZEfVNtrXdRmWGIBe1n8E4SyMVVqsJiADai6DmloVxP09dGI4uFEdnSNFzWW3hpO1SUq83iN9NnQ8fcEaRcWiaj40yMThZn3A5StmyJp9LcH3zla05LoN4woeTZyp2TtJPZ6mKhYQG5y4zqsw9krQ=

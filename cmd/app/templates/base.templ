@@ -1,0 +1,63 @@
+package templates
+
+templ Base(pageTitle string) {
+    <!DOCTYPE html>
+    <html lang="ru">
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+            <title>{ pageTitle }</title>
+
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="/static/favicon/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="/static/favicon/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="/static/favicon/favicon-16x16.png" />
+            <link rel="icon" href="/static/favicon/favicon.ico" sizes="any" />
+
+            <link href="/static/css/main.css" rel="stylesheet" type="text/css" />
+        </head>
+        <body>
+            { children...}
+
+            <script src="/static/vendor/alpinejs@3.13.5/alpinejs.min.js"></script>
+            <script src="/static/vendor/htmx.org@1.9.10/htmx.min.js"></script>
+        </body>
+    </html>
+}
+
+templ Layout(pageTitle string, version string) {
+    @Base(pageTitle) {
+        @Header()
+            { children...}
+        @Footer(version)
+    }
+}
+
+templ Content(pageTitle string, version string) {
+    @Layout(pageTitle, version) {
+        <main>
+            { children...}
+        </main>
+    }
+}
+
+templ Header() {
+    <div class="navbar bg-neutral text-neutral-content">
+      <button class="btn btn-ghost text-xl">daisyUI</button>
+    </div>
+}
+
+templ Footer(version string) {
+   <footer class="footer footer-center py-10 bg-base-300 text-base-content">
+     <aside>
+       <p>Версия { version }</p>
+     </aside>
+   </footer>
+}
