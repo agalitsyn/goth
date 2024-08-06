@@ -1,0 +1,55 @@
+/* html,
+body {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', 'Liberation Sans',
+    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  font-variation-settings: normal;
+  font-feature-settings: normal;
+} */
+
+.text-sm {
+  font-size: 0.9rem;
+}
+
+.min-height-content {
+  min-height: calc(100vh - 195px);
+}
+
+.container-constrained {
+  max-width: 1200px;
+}
+
+.error {
+  color: #fdb3b3;
+  font-style: normal;
+  font-weight: 400;
+  display: block;
+  font-size: 18px;
+  margin-top: 5px;
+
+  animation: fadeIn 1s;
+}
+
+.error + textarea,
+.error + input,
+.error + select {
+  border: 1px solid #fdb3b3;
+}
+
+.error-input {
+  border: 1px solid #fdb3b3;
+}
+
+.error-block {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.user-dropdown.dropdown-toggle::after {
+  display: none;
+}
+
+.user-dropdown.dropdown-toggle::before {
+  display: none;
+}

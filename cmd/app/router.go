@@ -16,25 +16,33 @@ import (
 //go:embed assets
 var assets embed.FS
 
-func MakeRouter() (*http.ServeMux, error) {
+func MakeRouter() (*routegroup.Bundle, error) {
 	router := routegroup.New(http.NewServeMux())
+
+	// TODO: add rate limiter
+	// TODO: add CSRF middleware
+	router.Use(
+		httptools.RequestLogger([]string{"/static", "/favicon.ico", "/robots.txt"}),
+		httptools.RealIP,
+		httptools.Recoverer(),
+		httptools.Trace,
+		httptools.AppInfo("app", version.String()),
+	)
 
 	// Note: order is important
 	router.Handle("GET /static/*", fileServerHandlerFunc())
-	router.Handle("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User-agent: *\nDisallow: /"))
 	})
 
-	router.Mount("/").Route(func(b *routegroup.Bundle) {
-		router.Use(httptools.Recoverer(), httptools.RequestLogger())
+	router.Group().Route(func(subgroup *routegroup.Bundle) {
 
-		router.Handle(
-			"/",
-			templ.Handler(templates.IndexPage("Go + templates + HTMX", version.String(), "Petya")).ServeHTTP,
-		)
+		subgroup.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+			templ.Handler(templates.IndexPage("Go + templates + HTMX", version.String(), "Petya")).ServeHTTP(w, r)
+		})
 	})
 
-	return router.Mux(), nil
+	return router, nil
 }
 
 func fileServerHandlerFunc() http.HandlerFunc {

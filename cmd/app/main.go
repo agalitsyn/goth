@@ -25,7 +25,19 @@ func main() {
 		fmt.Fprintln(os.Stdout, cfg.String())
 	}
 
-	pg, err := postgres.New(postgres.Config{URI: cfg.Postgres.ConnectionString})
+	pgCfg := postgres.Config{
+		URI:            cfg.Postgres.ConnectionString,
+		Host:           cfg.Postgres.Host,
+		Port:           cfg.Postgres.Port,
+		User:           cfg.Postgres.User,
+		Pass:           cfg.Postgres.Pass,
+		DB:             cfg.Postgres.DB,
+		TracerLogLevel: "error",
+	}
+	if cfg.Debug {
+		pgCfg.TracerLogLevel = "debug"
+	}
+	pg, err := postgres.New(ctx, pgCfg)
 	if err != nil {
 		slogtools.Fatal("could not create postgres client", "error", err)
 	}

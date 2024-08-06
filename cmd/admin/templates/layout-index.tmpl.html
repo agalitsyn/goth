@@ -1,0 +1,39 @@
+{{ define "base" }}
+  <!doctype html>
+  <html lang="ru">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+      <title>My App - {{ template "title" . }}</title>
+
+      <link rel="icon" href="/static/favicon/favicon.ico" sizes="any" />
+
+      <link rel="stylesheet" href="/static/vendor/bootstrap@5.3.3/bootstrap.min.css" />
+      <link rel="stylesheet" href="/static/vendor/bootstrap-icons@1.11.3/bootstrap-icons.min.css" />
+
+      <link rel="stylesheet" href="/static/css/main.css" />
+    </head>
+
+    <body>
+      <div class="wrapper">
+        {{ template "header" . }}
+
+
+        <main class="d-flex flex-column container-fluid p-2 min-height-content">
+          <div id="general-error"></div>
+
+          {{ template "content" . }}
+        </main>
+
+        {{ template "footer" . }}
+      </div>
+
+      <script src="/static/vendor/popperjs@@2.11.8/popper.min.js"></script>
+      <script src="/static/vendor/bootstrap@5.3.3/bootstrap.bundle.min.js"></script>
+      <script src="/static/vendor/alpinejs@3.13.5/alpinejs.min.js"></script>
+      <script src="/static/vendor/htmx.org@1.9.10/htmx.min.js"></script>
+      <script src="/static/vendor/sweetalert2@11/sweetalert2.min.js"></script>
+    </body>
+  </html>
+{{ end }}

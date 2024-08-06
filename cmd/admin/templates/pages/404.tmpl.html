@@ -1,0 +1,16 @@
+{{define "title"}}404{{end}}
+
+{{define "content"}}
+  <div class="justify-content-center">
+    <h1>Нет такой страницы</h1>
+
+    <div class="alert alert-danger alert-dismissible col-12 text-center" role="alert">
+      {{ .Data.Message}}
+
+      {{ if .Data.Error }}
+        <br>
+        <strong>DEBUG: </strong> {{ .Data.Error }}
+      {{ end }}
+    </div>
+  </div>
+{{end}}

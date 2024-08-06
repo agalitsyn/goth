@@ -2,91 +2,110 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/url"
 	"time"
 
-	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/kamilsk/retry/v5"
 	"github.com/kamilsk/retry/v5/strategy"
+	pglog "github.com/mcosta74/pgx-slog"
 
 	"github.com/agalitsyn/goth/pkg/secret"
 )
 
-const (
-	DriverName             = "pgx"
-	defaultMaxConnLifetime = time.Hour
-	defaultMaxOpenConns    = 4
-)
+// Querier is the interface postgres package uses to access the database. It is satisfied by *pgx.Conn, pgx.Tx, *pgxpool.Pool, etc.
+type Querier interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	SendBatch(ctx context.Context, b *pgx.Batch) (br pgx.BatchResults)
+}
+
+type DB struct {
+	*pgxpool.Pool
+}
+
+func New(ctx context.Context, cfg Config) (*DB, error) {
+	if err := cfg.CheckAndSetDefaults(); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
+
+	poolConfig, err := pgxpool.ParseConfig(cfg.URI.Unmask())
+	if err != nil {
+		return nil, fmt.Errorf("could not parse connection string: %w", err)
+	}
+
+	tracer := &tracelog.TraceLog{
+		Logger:   pglog.NewLogger(slog.Default()),
+		LogLevel: cfg.tracerLogLevelParsed,
+	}
+	poolConfig.ConnConfig.Tracer = tracer
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not create connection pool: %w", err)
+	}
+	return &DB{Pool: pool}, nil
+}
 
 type Config struct {
-	URI             secret.String
+	URI  secret.String
+	Host string
+	Port string
+	User string
+	Pass secret.String
+	DB   string
+
+	TracerLogLevel       string
+	tracerLogLevelParsed tracelog.LogLevel
+
 	MaxConnLifetime time.Duration
-	ConnectInterval time.Duration
-	ConnectTimeout  time.Duration
 }
 
 func (c *Config) CheckAndSetDefaults() error {
 	if c.URI.Unmask() == "" {
-		return errors.New("URI is required")
+		if c.Host == "" || c.Port == "" || c.User == "" || c.Pass.Unmask() == "" || c.DB == "" {
+			return errors.New("URI or Host, Port, User, Pass, DB is required")
+		}
+
+		hostPort := c.Host
+		if c.Port != "" {
+			hostPort = net.JoinHostPort(c.Host, c.Port)
+		}
+		uri := url.URL{
+			Scheme: "postgres",
+			Host:   hostPort,
+			Path:   fmt.Sprintf("/%s", c.DB),
+		}
+		uri.User = url.UserPassword(c.User, c.Pass.Unmask())
+		c.URI = secret.NewString(uri.String())
 	}
-	if c.MaxConnLifetime == 0 {
-		c.MaxConnLifetime = defaultMaxConnLifetime
+
+	if c.TracerLogLevel == "" {
+		c.tracerLogLevelParsed = tracelog.LogLevelError
+	} else {
+		lvl, err := tracelog.LogLevelFromString(c.TracerLogLevel)
+		if err != nil {
+			return fmt.Errorf("invalid tracer log level: %s", err)
+		}
+		c.tracerLogLevelParsed = lvl
 	}
-	if c.ConnectInterval == 0 {
-		c.ConnectInterval = 1 * time.Second
-	}
-	if c.ConnectTimeout == 0 {
-		c.ConnectTimeout = 10 * time.Second
-	}
+
 	return nil
-}
-
-type DB struct {
-	Cfg     Config
-	Session *sqlx.DB
-}
-
-func New(cfg Config) (*DB, error) {
-	if err := cfg.CheckAndSetDefaults(); err != nil {
-		return nil, fmt.Errorf("invalid config: %s", err)
-	}
-
-	pgxCfg, err := pgxpool.ParseConfig(cfg.URI.Unmask())
-	if err != nil {
-		return nil, fmt.Errorf("dsn parse error: %s", err)
-	}
-	// Note: in case of using pgbouncer or pgpool
-	//pgxCfg.ConnConfig.PreferSimpleProtocol = true
-	//pgxCfg.ConnConfig.BuildStatementCache = func(conn *pgconn.PgConn) stmtcache.Cache {
-	//	return stmtcache.New(conn, stmtcache.ModeDescribe, 512)
-	//}
-
-	db, err := sql.Open(
-		DriverName,
-		stdlib.RegisterConnConfig(pgxCfg.ConnConfig),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("driver open error: %w", err)
-	}
-	db.SetConnMaxLifetime(cfg.MaxConnLifetime)
-
-	dbx := sqlx.NewDb(db, DriverName)
-	session := &DB{
-		Session: dbx,
-		Cfg:     cfg,
-	}
-	return session, nil
 }
 
 func (d *DB) RetryConnect(ctx context.Context) error {
 	connectFunc := func(ctx context.Context) error {
-		if err := d.PingContext(ctx); err != nil {
+		if err := d.Ping(ctx); err != nil {
 			return err
 		}
 		return nil
@@ -104,61 +123,4 @@ func (d *DB) RetryConnect(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-func (d *DB) PingContext(ctx context.Context) error {
-	return d.Session.PingContext(ctx)
-}
-
-func (d *DB) Close() error {
-	return d.Session.Close()
-}
-
-func (d *DB) InTx(ctx context.Context, f func(tx *sqlx.Tx) error) error {
-	tx, finishTx, err := d.beginTx(ctx)
-	if err != nil {
-		return err
-	}
-	return finishTx(f(tx))
-}
-
-func (d *DB) beginTx(ctx context.Context) (*sqlx.Tx, func(error) error, error) {
-	tx, err := d.Session.BeginTxx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// it commits or rollbacks initialized transaction
-	finishTx := func(err error) error {
-		if err != nil {
-			e := tx.Rollback()
-			if e != nil && e != sql.ErrTxDone {
-				err = fmt.Errorf("failed to rollback transaction (err=%s) after error %s", e, err)
-			}
-			return err
-		}
-
-		e := tx.Commit()
-		if e == sql.ErrTxDone {
-			return fmt.Errorf("failed to commit rollbacked transaction (timeout): %w", sql.ErrTxDone)
-		}
-		if e != nil {
-			return fmt.Errorf("failed to commit transaction: %s", e.Error())
-		}
-
-		return nil
-	}
-
-	return tx, finishTx, err
-}
-
-func IsDuplicateKeyError(err error) bool {
-	pgErr := new(pgconn.PgError)
-	if errors.As(err, &pgErr) {
-		// unique_violation = 23505
-		if pgErr.Code == "23505" {
-			return true
-		}
-	}
-	return false
 }

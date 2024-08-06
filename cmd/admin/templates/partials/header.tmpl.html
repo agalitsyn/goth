@@ -1,0 +1,56 @@
+{{define "header"}}
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">My app</a>
+
+      <button class="navbar-toggler"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarNav"
+              aria-controls="navbarNav"
+              aria-expanded="false"
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item dropdown {{ if matchURL .Path "/" }}active{{ end }}">
+            <a class="nav-link dropdown-toggle"
+               href="#"
+               role="button"
+               data-bs-toggle="dropdown"
+               aria-expanded="false">Пункт меню</a>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="#">Подпункт меню</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+
+        <div class="d-flex">
+          <div class="dropdown dropstart">
+            <button class="btn dropdown-toggle user-dropdown border-0"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+              <i class="bi bi-person" style="font-size: 1.5rem"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <span class="dropdown-item" href="">{{ .User.Login }}</span>
+              </li>
+              <li>
+                <hr class="dropdown-divider"/>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/logout">Выйти</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+{{end}}

@@ -1,0 +1,39 @@
+{{define "content"}}
+  <main id="login-form" class="form-signin w-100 m-auto text-center">
+    <form hx-post="/login"
+          hx-trigger="submit"
+          hx-target="#login-form"
+          hx-swap="outerHTML"
+          data-bitwarden-watching="1">
+      <h1 class="h3 mb-3 fw-normal">Компания X</h1>
+
+      <div class="form-floating">
+        <input type="text"
+               name="login"
+               id="floatingInput"
+               placeholder="name"
+               class="form-control {{if .Data.Form.FieldErrors.login}}is-invalid{{end}}"
+               value="{{.Data.Form.Login}}"/>
+        <label for="floatingInput">Логин</label>
+        {{with .Data.Form.FieldErrors.login}}
+          <div class="invalid-feedback">{{.}}</div>
+        {{end}}
+      </div>
+      <div class="form-floating">
+        <input type="password"
+               name="password"
+               id="floatingPassword"
+               placeholder="Password"
+               class="form-control {{if .Data.Form.FieldErrors.password}}is-invalid{{end}}"
+               value="{{.Data.Form.Password}}"/>
+        <label for="floatingPassword">Пароль</label>
+        {{with .Data.Form.FieldErrors.password}}
+          <div class="invalid-feedback">{{.}}</div>
+        {{end}}
+      </div>
+      <button class="btn btn-primary w-100 py-2" type="submit">Войти</button>
+    </form>
+
+    <div id="general-error" class="mt-4"></div>
+  </main>
+{{end}}
