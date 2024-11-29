@@ -22,12 +22,12 @@ include bin-deps.mk
 $(GOBIN):
 	mkdir -p $(GOBIN)
 
-.PHONY: run-admin
-run-admin: $(AIR_BIN)
+.PHONY: start-admin
+start-admin: $(AIR_BIN)
 	$(AIR_BIN) -c .admin.air.toml
 
-.PHONY: run-app
-run-app: $(AIR_BIN)
+.PHONY: start-app
+start-app: $(AIR_BIN)
 	$(AIR_BIN) -c .app.air.toml
 
 .PHONY: run-cli
@@ -112,4 +112,3 @@ db-new-migration: $(TERN_BIN)
 .PHONY: db-create-superuser
 db-create-superuser:
 	go run $(CURDIR)/cmd/cli admin user create --login='admin' --password='admin'
-
