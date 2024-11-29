@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/agalitsyn/goth/internal/model"
-	"github.com/agalitsyn/goth/pkg/postgres/pagination"
+	"github.com/agalitsyn/postgres/pagination"
 )
 
 type UserFilterParams struct {

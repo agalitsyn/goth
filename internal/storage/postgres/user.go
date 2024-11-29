@@ -11,7 +11,7 @@ import (
 
 	"github.com/agalitsyn/goth/internal/model"
 	"github.com/agalitsyn/goth/internal/storage"
-	"github.com/agalitsyn/goth/pkg/postgres"
+	"github.com/agalitsyn/postgres"
 )
 
 type UserStorage struct {

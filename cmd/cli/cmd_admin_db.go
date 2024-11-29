@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/agalitsyn/goth/pkg/postgres"
+	"github.com/agalitsyn/postgres"
 
 	"github.com/agalitsyn/goth/migrations"
 )

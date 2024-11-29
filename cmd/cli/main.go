@@ -14,10 +14,10 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
-	"github.com/agalitsyn/goth/pkg/postgres"
-	"github.com/agalitsyn/goth/pkg/secret"
-	"github.com/agalitsyn/goth/pkg/slogtools"
 	"github.com/agalitsyn/goth/pkg/version"
+	"github.com/agalitsyn/postgres"
+	"github.com/agalitsyn/secret"
+	"github.com/agalitsyn/slogutils"
 )
 
 var (
@@ -59,7 +59,6 @@ func main() {
 		slog.LevelInfo.String(),
 		fmt.Sprintf("Log level (%s)", strings.Join(allowedLogLevels, " | ")),
 	)
-	completionFromStaticVariants(rootCmd, "log-level", allowedLogLevels...)
 
 	rootCmd.AddCommand(NewVersionCommand())
 	rootCmd.AddCommand(NewAdminGroup(&d))
@@ -86,7 +85,7 @@ type deps struct {
 
 func initDeps() (deps, error) {
 	d := deps{
-		logLevel: slogtools.ParseLogLevel(flagLogLevel),
+		logLevel: slogutils.ParseLogLevel(flagLogLevel),
 	}
 	return d, nil
 }
@@ -101,7 +100,7 @@ func setupLogger() {
 		flagLogLevel = v
 	}
 
-	lvl := slogtools.ParseLogLevel(flagLogLevel)
+	lvl := slogutils.ParseLogLevel(flagLogLevel)
 	w := os.Stdout
 	logger := slog.New(
 		tint.NewHandler(w, &tint.Options{

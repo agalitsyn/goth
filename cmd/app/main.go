@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/agalitsyn/goth/pkg/postgres"
-	"github.com/agalitsyn/goth/pkg/slogtools"
+	"github.com/agalitsyn/postgres"
+	"github.com/agalitsyn/slogutils"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	defer stop()
 
 	cfg := ParseFlags()
-	slogtools.SetupGlobalLogger(cfg.Log.Level, os.Stdout)
+	slogutils.SetupGlobalLogger(cfg.Log.Level, os.Stdout)
 
 	if cfg.Debug {
 		slog.Debug("running with config")
@@ -39,12 +39,12 @@ func main() {
 	}
 	pg, err := postgres.New(ctx, pgCfg)
 	if err != nil {
-		slogtools.Fatal("could not create postgres client", "error", err)
+		slogutils.Fatal("could not create postgres client", "error", err)
 	}
 	defer pg.Close()
 
 	if err = pg.RetryConnect(ctx); err != nil {
-		slogtools.Fatal("could not connect to postgres", "error", err)
+		slogutils.Fatal("could not connect to postgres", "error", err)
 	}
 
 	router, err := MakeRouter()

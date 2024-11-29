@@ -19,8 +19,8 @@ import (
 	"github.com/agalitsyn/goth/internal/auth"
 	postgresStorage "github.com/agalitsyn/goth/internal/storage/postgres"
 	"github.com/agalitsyn/goth/pkg/httptools"
-	"github.com/agalitsyn/goth/pkg/postgres"
-	"github.com/agalitsyn/goth/pkg/slogtools"
+	"github.com/agalitsyn/postgres"
+	"github.com/agalitsyn/slogutils"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	defer stop()
 
 	cfg := ParseFlags()
-	slogtools.SetupGlobalLogger(cfg.Log.Level, os.Stdout)
+	slogutils.SetupGlobalLogger(cfg.Log.Level, os.Stdout)
 
 	if cfg.Debug {
 		slog.Debug("running with config")
@@ -37,7 +37,7 @@ func main() {
 
 	templates, err := httptools.NewTemplateCache(EmbedFiles, "templates", templateFuncs())
 	if err != nil {
-		slogtools.Fatal("could not load templates", "error", err)
+		slogutils.Fatal("could not load templates", "error", err)
 	}
 
 	htmlRenderer := renderer.NewHTMLRenderer(httptools.NewTemplateRenderer(templates))
@@ -67,12 +67,12 @@ func main() {
 	}
 	pg, err := postgres.New(ctx, pgCfg)
 	if err != nil {
-		slogtools.Fatal("could not create postgres client", "error", err)
+		slogutils.Fatal("could not create postgres client", "error", err)
 	}
 	defer pg.Close()
 
 	if err = pg.RetryConnect(ctx); err != nil {
-		slogtools.Fatal("could not connect to postgres", "error", err)
+		slogutils.Fatal("could not connect to postgres", "error", err)
 	}
 
 	userStorage := postgresStorage.NewUserStorage(pg)

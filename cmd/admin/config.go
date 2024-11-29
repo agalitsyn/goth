@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/agalitsyn/goth/pkg/flagtools"
-	"github.com/agalitsyn/goth/pkg/secret"
-	"github.com/agalitsyn/goth/pkg/slogtools"
+	"github.com/agalitsyn/flagutils"
 	"github.com/agalitsyn/goth/pkg/version"
+	"github.com/agalitsyn/secret"
+	"github.com/agalitsyn/slogutils"
 )
 
 const EnvPrefix = "ADMIN"
@@ -89,8 +89,8 @@ func ParseFlags() Config {
 		"The list which indicates which headers are safe to expose.",
 	)
 
-	flagtools.Prefix = EnvPrefix
-	flagtools.Parse()
+	flagutils.Prefix = EnvPrefix
+	flagutils.Parse()
 	flag.Parse()
 
 	if *pgDSN != "" {
@@ -101,7 +101,7 @@ func ParseFlags() Config {
 		*pgPass = ""
 	}
 
-	slogLevel := slogtools.ParseLogLevel(*logLevel)
+	slogLevel := slogutils.ParseLogLevel(*logLevel)
 
 	cfg.Log.Level = slogLevel
 	cfg.HTTP.ShutdownTimeoutSec = time.Duration(*httpShutdownTimeoutSec) * time.Second

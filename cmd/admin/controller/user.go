@@ -7,7 +7,7 @@ import (
 	"github.com/agalitsyn/goth/cmd/admin/renderer"
 	"github.com/agalitsyn/goth/internal/auth"
 	"github.com/agalitsyn/goth/internal/storage"
-	"github.com/agalitsyn/goth/pkg/httptools/validator"
+	"github.com/agalitsyn/validator"
 )
 
 type UserController struct {
